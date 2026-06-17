@@ -1,58 +1,30 @@
-// Animated counters in the status bar — runs once on load
-function animateCounters() {
-  const counters = document.querySelectorAll('[data-counter]');
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Subtle reveal-on-scroll for cards
+const revealEls = document.querySelectorAll('.job-card, .stack-card, .verify-card');
 
-  counters.forEach(el => {
-    const target = parseFloat(el.getAttribute('data-counter'));
-    const decimals = parseInt(el.getAttribute('data-decimal') || '0', 10);
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (reduceMotion) {
-      el.textContent = formatNumber(target, decimals);
-      return;
-    }
-
-    const duration = 1400;
-    const start = performance.now();
-
-    function tick(now) {
-      const progress = Math.min((now - start) / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const value = target * eased;
-      el.textContent = formatNumber(value, decimals);
-      if (progress < 1) requestAnimationFrame(tick);
-      else el.textContent = formatNumber(target, decimals);
-    }
-    requestAnimationFrame(tick);
+if (!reduceMotion && revealEls.length) {
+  revealEls.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
   });
-}
 
-function formatNumber(value, decimals) {
-  if (decimals > 0) return value.toFixed(decimals);
-  return Math.round(value).toLocaleString('en-US');
-}
-
-// Trigger counters when the status bar scrolls into view (also fires on load since it's in the hero)
-const statusBar = document.getElementById('statusBar');
-if (statusBar) {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        animateCounters();
-        observer.disconnect();
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.3 });
-  observer.observe(statusBar);
+  }, { threshold: 0.15 });
+
+  revealEls.forEach(el => observer.observe(el));
 }
 
-// Nav background intensifies on scroll
+// Nav shadow on scroll
 const nav = document.querySelector('.nav');
 window.addEventListener('scroll', () => {
-  if (window.scrollY > 20) {
-    nav.style.boxShadow = '0 1px 0 rgba(125,211,168,0.08)';
-  } else {
-    nav.style.boxShadow = 'none';
-  }
+  nav.style.boxShadow = window.scrollY > 10 ? '0 1px 0 rgba(15,23,41,0.06)' : 'none';
 });
